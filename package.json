@@ -1,6 +1,6 @@
 {
-  "name": "3",
-  "private": true,
+  "name": "vite-plugin-tenoxui",
+  "description": "TenoxUI integration for vite",
   "version": "0.0.0",
   "type": "module",
   "scripts": {

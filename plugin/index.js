@@ -99,35 +99,7 @@ export default function Txoo() {
       load(id) {
         if (id === RESOLVED_VIRTUAL_MODULE_ID) {
           if (MODES === 'serve') {
-            return `
-// Try to use Vite's updateStyle, fallback to custom injection
-let updateStyle, removeStyle;
-
-try {
-  const viteClient = await import('/@vite/client');
-  updateStyle = viteClient.updateStyle;
-  removeStyle = viteClient.removeStyle;
-} catch (e) {
-  // Fallback for cases where vite client isn't available
-  updateStyle = function(id, css) {
-    const existing = document.getElementById(id);
-    if (existing) {
-      existing.textContent = css;
-    } else {
-      const style = document.createElement('style');
-      style.id = id;
-      style.textContent = css;
-      document.head.appendChild(style);
-    }
-  };
-  
-  removeStyle = function(id) {
-    const existing = document.getElementById(id);
-    if (existing) {
-      existing.remove();
-    }
-  };
-}
+            return `import { updateStyle, removeStyle } from '/@vite/client'
 
 const id = ${JSON.stringify(VIRTUAL_MODULE_ID)};
 let currentCSS = '';
