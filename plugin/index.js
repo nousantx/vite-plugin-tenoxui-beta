@@ -13,12 +13,10 @@ const VIRTUAL_MODULE_ID_BUILD = 'virtual:tenoxui.css'
 const RESOLVED_VIRTUAL_MODULE_ID_BUILD = '\0' + VIRTUAL_MODULE_ID_BUILD
 
 export default function Txoo() {
-  const cssPath = path.resolve('./css.txt')
-
   let config
   let includeFilter = () => true
   let tenoxui = null
-  let nx = new Extractor()
+  let extractor = new Extractor()
 
   async function loadConfig() {
     try {
@@ -29,7 +27,7 @@ export default function Txoo() {
         const data = await import(configURL)
         config = data.default || data
         tenoxui = new TenoxUI(config.css)
-        nx.setConfig({ css: config.css })
+        extractor.setConfig({ css: config.css })
         const { include, exclude } = config
         includeFilter = createFilter(include, exclude)
       } else {
@@ -47,15 +45,6 @@ export default function Txoo() {
   let css = ''
   let servers = []
 
-  function readCSS() {
-    try {
-      return fs.readFileSync(cssPath, 'utf-8')
-    } catch (err) {
-      console.warn(`Could not read CSS file at ${cssPath}:`, err.message)
-      return ''
-    }
-  }
-
   const allClassNames = new Set()
 
   function generateCSS() {
@@ -66,11 +55,13 @@ export default function Txoo() {
 
   async function scanAllFiles() {
     allClassNames.clear()
-    const files = await fg(config.include || [], { ignore: config.exclude || [] })
-    console.log(files, config)
+    const files = await fg(config.include || [], {
+      ignore: config.exclude || []
+    })
+
     for (const file of files) {
       const content = fs.readFileSync(file, 'utf-8')
-      const classNames = nx.process(content)
+      const classNames = extractor.process(content)
       for (const name of classNames) {
         allClassNames.add(name)
       }
@@ -181,7 +172,6 @@ export default {};
       },
       async configureServer(server) {
         servers.push(server)
-        // server.watcher.add(cssPath)
 
         server.middlewares.use('/__tenoxui_css__', async (req, res, next) => {
           if (req.method === 'GET') {
@@ -195,15 +185,14 @@ export default {};
           }
         })
 
-        server.watcher.on('change', file => {
-          // if (file === cssPath) {
+        server.watcher.on('change', (file) => {
           if (includeFilter(file)) {
             const content = fs.readFileSync(file, 'utf-8')
-            const classNames = nx.process(content)
+            const classNames = extractor.process(content)
             for (const name of classNames) {
               allClassNames.add(name)
             }
-            css = generateCSS
+            css = generateCSS()
             sendCSSUpdate(css)
           }
         })
@@ -219,7 +208,7 @@ export default {};
           if (MODES === 'build') {
             return css
           }
-          return '/* nothing to do */'
+          return '/* nothing to do :3 */'
         }
       }
     }
