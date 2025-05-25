@@ -15,7 +15,7 @@ const RESOLVED_VIRTUAL_MODULE_ID_BUILD = '\0' + VIRTUAL_MODULE_ID_BUILD
 export default function Txoo() {
   const cssPath = path.resolve('./css.txt')
 
-  let config
+  let userConfig
   let includeFilter = () => true
   let tenoxui = null
   let nx = new Extractor()
@@ -27,23 +27,23 @@ export default function Txoo() {
       if (fs.existsSync(configPath)) {
         const configURL = pathToFileURL(configPath).href + `?t=${Date.now()}`
         const data = await import(configURL)
-        config = data.default || data
-        tenoxui = new TenoxUI(config.css)
-        nx.setConfig({ css: config.css })
-        const { include, exclude } = config
+        userConfig = data.default || data
+        tenoxui = new TenoxUI(userConfig.css)
+        nx.setConfig({ css: userConfig.css })
+        const { include, exclude } = userConfig
         includeFilter = createFilter(include, exclude)
       } else {
         console.warn('⚠️ Config file not found, using empty config')
-        config = {}
+        userConfig = {}
         includeFilter = () => true
       }
     } catch (error) {
       console.error('❌ Error loading framework config:', error)
-      config = {}
+      userConfig = {}
     }
   }
 
-  let MODES
+  let config
   let css = ''
   let servers = []
 
@@ -53,27 +53,6 @@ export default function Txoo() {
     } catch (err) {
       console.warn(`Could not read CSS file at ${cssPath}:`, err.message)
       return ''
-    }
-  }
-
-  const allClassNames = new Set()
-
-  function generateCSS() {
-    if (!tenoxui) return ''
-    const styles = tenoxui.render(config.css?.apply || {}, Array.from(allClassNames))
-    return styles
-  }
-
-  async function scanAllFiles() {
-    allClassNames.clear()
-    const files = await fg(config.include || [], { ignore: config.exclude || [] })
-    console.log(files, config)
-    for (const file of files) {
-      const content = fs.readFileSync(file, 'utf-8')
-      const classNames = nx.process(content)
-      for (const name of classNames) {
-        allClassNames.add(name)
-      }
     }
   }
 
@@ -91,12 +70,13 @@ export default function Txoo() {
     {
       name: 'tenoxui:global',
       configResolved(_config) {
-        MODES = _config.command
+        config = _config
+        console.log(config.command)
       },
       async buildStart() {
         await loadConfig()
-        await scanAllFiles()
-        css = generateCSS()
+        console.log(tenoxui, nx)
+        css = readCSS()
       }
     },
     {
@@ -107,7 +87,7 @@ export default function Txoo() {
 
       load(id) {
         if (id === RESOLVED_VIRTUAL_MODULE_ID) {
-          if (MODES === 'serve') {
+          if (config.command === 'serve') {
             return `
 // Try to use Vite's updateStyle, fallback to custom injection
 let updateStyle, removeStyle;
@@ -183,13 +163,12 @@ export default {};
         servers.push(server)
         // server.watcher.add(cssPath)
 
-        server.middlewares.use('/__tenoxui_css__', async (req, res, next) => {
+        server.middlewares.use('/__tenoxui_css__', (req, res, next) => {
           if (req.method === 'GET') {
-            await loadConfig()
-            await scanAllFiles()
+            const currentCSS = readCSS()
             res.setHeader('Content-Type', 'text/plain')
             res.setHeader('Cache-Control', 'no-cache')
-            res.end(generateCSS())
+            res.end(currentCSS)
           } else {
             next()
           }
@@ -198,13 +177,15 @@ export default {};
         server.watcher.on('change', file => {
           // if (file === cssPath) {
           if (includeFilter(file)) {
-            const content = fs.readFileSync(file, 'utf-8')
+            
+            const content = fs.readFileSync(file, "utf-8")
             const classNames = nx.process(content)
-            for (const name of classNames) {
-              allClassNames.add(name)
-            }
-            css = generateCSS
-            sendCSSUpdate(css)
+            const styles = tenoxui.render(classNames)
+            
+            
+            console.log(classNames,styles)
+            css = readCSS()
+            sendCSSUpdate(styles + css)
           }
         })
       }
@@ -216,8 +197,8 @@ export default {};
       },
       load(id) {
         if (id === RESOLVED_VIRTUAL_MODULE_ID_BUILD) {
-          if (MODES === 'build') {
-            return css
+          if (config.command === 'build') {
+            return readCSS()
           }
           return '/* nothing to do */'
         }
