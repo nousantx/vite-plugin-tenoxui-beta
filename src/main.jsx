@@ -1,6 +1,7 @@
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
-import 'virtual:tenx:css'
+import 'virtual:tenoxui:dev'
+import 'virtual:tenoxui.css'
 import './index.css'
 import App from './App.jsx'
 

@@ -1,0 +1,18 @@
+body {
+  background: red;
+}
+.bg-red {
+  background: red;
+}
+.\[padding\]-200px {
+  padding: 200px;
+}
+.\[margin\]-10px {
+  margin: 10px;
+}
+.\[color\]-green {
+  color: green;
+}
+.bg-blue {
+  background: blue;
+}
