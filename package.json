@@ -1,21 +1,38 @@
 {
-  "name": "vite-plugin-tenoxui",
+  "name": "vite-plugin-tenoxui-beta",
   "description": "TenoxUI integration for vite",
-  "version": "0.0.0",
+  "version": "0.1.0-alpha.0",
   "type": "module",
   "scripts": {
     "dev": "vite",
     "build": "vite build",
+    "build:plugin": "vite build -c vite-plugin.config.js",
     "lint": "eslint .",
     "preview": "vite preview"
   },
+  "files": [
+    "plugin",
+    "package.json",
+    "README.md"
+  ],
+  "main": "./plugin/index.cjs.js",
+  "module": "./plugin/index.es.js",
+  "exports": {
+    ".": {
+      "require": "./plugin/index.cjs.js",
+      "import": "./plugin/index.es.js"
+    }
+  },
   "dependencies": {
-    "react": "^19.1.0",
-    "react-dom": "^19.1.0"
+    "@rollup/pluginutils": "^5.1.4",
+    "fast-glob": "^3.3.3",
+    "nguraijs": "^0.4.0",
+    "tenoxui": "^1.0.0"
   },
   "devDependencies": {
+    "react": "^19.1.0",
+    "react-dom": "^19.1.0",
     "@eslint/js": "^9.25.0",
-    "@rollup/pluginutils": "^5.1.4",
     "@tenoxui/preset-tailwind": "1.0.0-alpha.5",
     "@types/react": "^19.1.2",
     "@types/react-dom": "^19.1.2",
@@ -23,10 +40,7 @@
     "eslint": "^9.25.0",
     "eslint-plugin-react-hooks": "^5.2.0",
     "eslint-plugin-react-refresh": "^0.4.19",
-    "fast-glob": "^3.3.3",
     "globals": "^16.0.0",
-    "nguraijs": "^0.4.0",
-    "tenoxui": "^1.0.0",
     "vite": "^6.3.5",
     "vite-plugin-inspect": "^11.1.0"
   },

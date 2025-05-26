@@ -8,19 +8,22 @@ importers:
 
   .:
     dependencies:
-      react:
-        specifier: ^19.1.0
-        version: 19.1.0
-      react-dom:
-        specifier: ^19.1.0
-        version: 19.1.0(react@19.1.0)
+      '@rollup/pluginutils':
+        specifier: ^5.1.4
+        version: 5.1.4(rollup@4.41.1)
+      fast-glob:
+        specifier: ^3.3.3
+        version: 3.3.3
+      nguraijs:
+        specifier: ^0.4.0
+        version: 0.4.0
+      tenoxui:
+        specifier: ^1.0.0
+        version: 1.0.0(@tenoxui/core@2.0.2(@tenoxui/moxie@0.7.1))(@tenoxui/moxie@0.7.1)
     devDependencies:
       '@eslint/js':
         specifier: ^9.25.0
         version: 9.27.0
-      '@rollup/pluginutils':
-        specifier: ^5.1.4
-        version: 5.1.4(rollup@4.41.1)
       '@tenoxui/preset-tailwind':
         specifier: 1.0.0-alpha.5
         version: 1.0.0-alpha.5
@@ -42,18 +45,15 @@ importers:
       eslint-plugin-react-refresh:
         specifier: ^0.4.19
         version: 0.4.20(eslint@9.27.0)
-      fast-glob:
-        specifier: ^3.3.3
-        version: 3.3.3
       globals:
         specifier: ^16.0.0
         version: 16.1.0
-      nguraijs:
-        specifier: ^0.4.0
-        version: 0.4.0
-      tenoxui:
-        specifier: ^1.0.0
-        version: 1.0.0(@tenoxui/core@2.0.2(@tenoxui/moxie@0.7.1))(@tenoxui/moxie@0.7.1)
+      react:
+        specifier: ^19.1.0
+        version: 19.1.0
+      react-dom:
+        specifier: ^19.1.0
+        version: 19.1.0(react@19.1.0)
       vite:
         specifier: ^6.3.5
         version: 6.3.5
