@@ -5,6 +5,11 @@ export default {
   exclude: ['**/node_modules/**/*', '**/dist/**/*'],
   css: {
     apply: { ...defaultProperties, ...preflight },
-    ...preset()
+    ...preset(),
+    aliases: {
+      btn: '[background]-red',
+      'btn-icon': '[background]-blue',
+      'btn-2px/40px': '[background]-red'
+    }
   }
 }

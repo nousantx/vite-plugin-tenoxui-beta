@@ -1,7 +1,7 @@
 {
   "name": "vite-plugin-tenoxui-beta",
   "description": "TenoxUI integration for vite",
-  "version": "0.1.0-alpha.0",
+  "version": "0.1.0-alpha.2",
   "type": "module",
   "scripts": {
     "dev": "vite",

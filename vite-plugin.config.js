@@ -5,7 +5,7 @@ export default {
     target: 'es2018',
     outDir: 'plugin',
     lib: {
-      entry: './plugin/index.js',
+      entry: './src/plugin/index.js',
       formats: ['es', 'cjs'],
       fileName: (format) => `index.${format}.js`
     },
