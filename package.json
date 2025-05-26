@@ -12,6 +12,7 @@
   },
   "files": [
     "plugin",
+    "!plugin/vite.svg",
     "package.json",
     "README.md"
   ],

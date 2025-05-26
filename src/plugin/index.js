@@ -26,7 +26,7 @@ export default function Txoo() {
         const data = await import(configURL)
         config = data.default || data
         tenoxui = new TenoxUI(config.css)
-        extractor.setConfig({ css: config.css })
+        extractor.setConfig({ css: config.css, rules: config.rules })
         const { include, exclude } = config
         includeFilter = createFilter(include, exclude)
       } else {

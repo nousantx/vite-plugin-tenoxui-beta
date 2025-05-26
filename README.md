@@ -10,7 +10,7 @@ A seamless way to integrate [TenoxUI](https://github.com/tenoxui/tenoxui) in vit
 npm i vite-plugin-tenoxui-beta
 ```
 
-2. Use plugin
+2. Use the plugin
 
 ```javascript
 // vite.config.js
