@@ -14,9 +14,6 @@ importers:
       fast-glob:
         specifier: ^3.3.3
         version: 3.3.3
-      nguraijs:
-        specifier: ^0.4.0
-        version: 0.4.0
       tenoxui:
         specifier: ^1.0.0
         version: 1.0.0(@tenoxui/core@2.0.2(@tenoxui/moxie@0.7.1))(@tenoxui/moxie@0.7.1)
@@ -36,6 +33,9 @@ importers:
       '@vitejs/plugin-react':
         specifier: ^4.4.1
         version: 4.5.0(vite@6.3.5)
+      cssrxp:
+        specifier: ^0.3.0
+        version: 0.3.0
       eslint:
         specifier: ^9.25.0
         version: 9.27.0
@@ -48,6 +48,9 @@ importers:
       globals:
         specifier: ^16.0.0
         version: 16.1.0
+      nguraijs:
+        specifier: ^0.6.1
+        version: 0.6.1
       react:
         specifier: ^19.1.0
         version: 19.1.0
@@ -619,6 +622,9 @@ packages:
     resolution: {integrity: sha512-uV2QOWP2nWzsy2aMp8aRibhi9dlzF5Hgh5SHaB9OiTGEyDTiJJyx0uy51QXdyWbtAHNua4XJzUKca3OzKUd3vA==}
     engines: {node: '>= 8'}
 
+  cssrxp@0.3.0:
+    resolution: {integrity: sha512-Y6zDc6u+hLfeqJa/Gg9/VzgyxGYgCT+GyQCJ3fKLkSvOu7SLCVaPFixWfjSwcSTWlutGww4YYEcdO8mGJ2q0mg==}
+
   csstype@3.1.3:
     resolution: {integrity: sha512-M1uQkMl8rQK/szD0LNhtqxIPLpimGm8sOBwU7lLnCpSbTyY3yeU1Vc7l4KT5zT4s/yOxHH5O7tIuuLOCnLADRw==}
 
@@ -907,8 +913,8 @@ packages:
   natural-compare@1.4.0:
     resolution: {integrity: sha512-OWND8ei3VtNC9h7V60qff3SVobHr996CTwgxubgyQYEpg290h9J0buyECNNJexkFm5sOajh5G116RYA1c8ZMSw==}
 
-  nguraijs@0.4.0:
-    resolution: {integrity: sha512-dNBCw0eTvJdfzh5Xgk1aRhAcWxu5PBuN9nj9yTgBf42/1gzJ12jR3q+56zCR41olvToIJ/9+TOMVM2w4FCbIjA==}
+  nguraijs@0.6.1:
+    resolution: {integrity: sha512-KlY61qhWN3pol3BJnKlrsM4edLvMrVZkapTFNn8/ZIT0/vDeXDg8N9Q1J5vU0dsbOJ8Mq8PHYhfAtT5PtuqBLA==}
 
   node-releases@2.0.19:
     resolution: {integrity: sha512-xxOWJsBKtzAq7DY0J+DTzuz58K8e7sJbdgwkbMWQe8UYB6ekmsQ45q0M/tJDsGaZmbC+l7n57UV8Hl5tHxO9uw==}
@@ -1631,6 +1637,8 @@ snapshots:
       shebang-command: 2.0.0
       which: 2.0.2
 
+  cssrxp@0.3.0: {}
+
   csstype@3.1.3: {}
 
   debug@4.4.1:
@@ -1907,7 +1915,7 @@ snapshots:
 
   natural-compare@1.4.0: {}
 
-  nguraijs@0.4.0: {}
+  nguraijs@0.6.1: {}
 
   node-releases@2.0.19: {}
 
