@@ -12,6 +12,7 @@
   },
   "files": [
     "plugin",
+    "index.d.ts",
     "!plugin/vite.svg",
     "package.json",
     "README.md"
