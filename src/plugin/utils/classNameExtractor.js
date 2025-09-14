@@ -1,35 +1,97 @@
-// new - classNameExtractor.js
-import Ngurai from 'nguraijs'
-import { TenoxUI, constructRaw } from 'tenoxui'
+import { Ngurai } from '@nguraijs/core'
+import { TenoxUI } from '@tenoxui/core'
+import { Moxie, transform, createMatcher } from '../../../moxie.js'
+import { create as CreateTenoxUI } from './createTenoxUI.js'
+import { Renderer } from './staticRenderer.js'
 
 export class Extractor {
-  constructor({ css = { property: { bg: 'background' } }, rules = [] } = {}) {
+  constructor({
+    rules = [],
+    // core config
+    utilities = {},
+    variants = {},
+    plugins = [],
+    // renderer config
+    aliases = {},
+    apply = {},
+    // moxie config
+    priority = 0,
+    prefixChars = [],
+    typeSafelist = [],
+    valuePatterns = [],
+    moxiePlugins = []
+  } = {}) {
+    this.matcher
     this.config = rules
-    this.cssConfig = css
-    this.core = new TenoxUI(this.cssConfig)
+    this.cssConfig = {
+      utilities,
+      variants,
+      plugins,
+      priority,
+      prefixChars,
+      typeSafelist,
+      moxiePlugins,
+      valuePatterns
+    }
+
+    this.core = CreateTenoxUI({
+      ...this.cssConfig,
+      onMatcherCreated: (result) => {
+        this.matcher = result
+      }
+    })
+    this.main = new Renderer({
+      main: this.core,
+      aliases,
+      apply
+    })
+
+    this.init()
   }
 
-  setConfig({ css = {}, rules = [] } = {}) {
-    this.config = rules
+  init() {
+    this.core.process('[--moxie-is-init]-true')
+  }
+
+  render(...cn) {
+    return this.main.render(...cn)
+  }
+
+  setConfig(css = {}) {
+    this.config = css.rules
     this.cssConfig = css
-    this.core = new TenoxUI(css)
+    this.core = CreateTenoxUI({
+      ...css,
+      onMatcherCreated: (x) => {
+        this.matcher = x
+      }
+    })
+    this.init()
     return this
   }
 
   process(code) {
+    if (!code) return []
     try {
-      const { all, prefix, type } = this.core.main.regexp(
-        Object.keys(this.cssConfig.aliases || {}) || []
-      )
+      const withValue = createMatcher(this.matcher.matcher.patterns, {
+        strict: false,
+        valueMode: 2
+      })
+
+      const valueless = createMatcher(this.matcher.matcher.patterns, {
+        withValue: false,
+        strict: false
+      })
 
       const nx = new Ngurai({
-        customOnly: true,
-        noUnknownToken: true,
+        tokensOnly: true,
         noSpace: true,
-        custom: {
+        noUnknownTokens: true,
+        tokens: {
           className: [
-            new RegExp(`!?${all.slice(1, -1)}`),
-            new RegExp(`!?(?:(${prefix}):)?${type}`),
+            withValue,
+            valueless,
+            // new RegExp(reg2),
             ...this.config.map((reg) => {
               const source = reg.source
               return new RegExp(`!?${source}`, reg.flags)
@@ -38,29 +100,23 @@ export class Extractor {
         }
       })
 
-      const classNames = [
-        ...new Set(
+      const classNames = Array.from(
+        new Set(
           nx
             .process(code)
             .flatMap((line) => line.filter((token) => token.type === 'className'))
             .map((token) => token.value)
         )
-      ]
+      )
 
-      const validateClassNames =
+      const validatedClassNames =
         classNames.length > 0
-          ? this.core.process(classNames).map((i) => {
-              const [prefix, type, value, unit, secondValue, secondUnit] = i.raw
-              return (
-                (i.isImportant ? '!' : '') +
-                (i.rules
-                  ? constructRaw(prefix, type, value, unit, secondValue, secondUnit)
-                  : i.raw[6])
-              )
-            })
+          ? (this.core.process(classNames) || [])
+              .map((item) => item.use === 'moxie' && item.rules && item.className)
+              .filter(Boolean)
           : []
 
-      return validateClassNames
+      return validatedClassNames
     } catch (error) {
       console.error('Error extracting class names:', error)
       return []

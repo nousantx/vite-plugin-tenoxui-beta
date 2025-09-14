@@ -1,17 +1,14 @@
-import { TenoxUI } from 'tenoxui'
-import config from './tenoxui.config.js'
+import { Extractor } from './src/plugin/utils/classNameExtractor.js'
+import { is, has } from 'cssrxp'
 
-const css = new TenoxUI({
-  ...config.css
+const ext = new Extractor({
+  utilities: {
+    bg: 'background'
+  }
 })
 
 console.log(
-  // should generate only 3 css rules
-  css.render([
-    'iam-frfr-5', // 5 * 0.25 + rem = 1.25rem
-    'iam-frfr-5px', // 5px, 5 = value, px = unit
-    'hover:iam-frfr-5rem', // 5rem
-    'iam-frfr', // null, value isn't defined
-    'iam-frfr-5px/5' // null, second value (value after /) is defined
-  ])
+  ext.render(
+    ext.process('"bg-red" [--clr]-red [margin]-10px [margin]-10 [x]-px902 bg-1/6 bg-[100px/40px]"')
+  )
 )

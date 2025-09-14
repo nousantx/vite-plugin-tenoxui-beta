@@ -4,7 +4,9 @@ import path from 'node:path'
 import { pathToFileURL } from 'node:url'
 import { createFilter } from '@rollup/pluginutils'
 import { Extractor } from './utils/classNameExtractor.js'
-import { TenoxUI } from 'tenoxui'
+import { Renderer } from './utils/staticRenderer.js'
+import { create as TenoxUI } from './utils/createTenoxUI.js'
+import { transform } from '../../moxie.js'
 
 const WS_EVENT_PREFIX = 'hmr:tenoxui'
 const VIRTUAL_MODULE_ID = 'virtual:tenoxui:dev'
@@ -19,14 +21,32 @@ export default function Txoo() {
   let extractor = new Extractor()
   const configPath = path.resolve('tenoxui.config.js')
 
+  let GLOBAL_MATCHER = null
+  let GLOBAL_MATCHER_TX = null
+
   async function loadConfig() {
     try {
       if (fs.existsSync(configPath)) {
         const configURL = pathToFileURL(configPath).href + `?t=${Date.now()}`
         const data = await import(configURL)
         config = data.default || data
-        tenoxui = new TenoxUI(config.css)
-        extractor.setConfig({ css: config.css, rules: config.rules })
+        tenoxui = new Renderer({
+          main: TenoxUI({
+            ...config.css,
+            onMatcherCreated: (x) => {
+              GLOBAL_MATCHER_TX = x
+            }
+          }),
+          aliases: config.css?.aliases,
+          apply: config.css?.apply
+        })
+        extractor.setConfig({
+          ...config.css,
+          onMatcherCreated: (x) => {
+            GLOBAL_MATCHER = x
+          },
+          rules: config.rules || []
+        })
         const { include, exclude } = config
         includeFilter = createFilter(include, exclude)
       } else {
@@ -48,7 +68,13 @@ export default function Txoo() {
 
   function generateCSS() {
     if (!tenoxui) return ''
-    const styles = tenoxui.render(config.css?.apply || {}, Array.from(allClassNames))
+
+    const styles = tenoxui.render(Array.from(allClassNames) || [])
+    // const styles = transform(data).rules.join('\n')
+    /*if (GLOBAL_MATCHER && GLOBAL_MATCHER_TX) {
+      console.log(GLOBAL_MATCHER.matcher.matcher)
+      console.log(GLOBAL_MATCHER_TX.matcher.matcher)
+    }*/
     return styles
   }
 
@@ -167,6 +193,7 @@ export default {};
               allClassNames.add(name)
             }
             css = generateCSS()
+            console.log(allClassNames, extractor.core.utilities)
             sendCSSUpdate(css)
           }
         })

@@ -1,21 +1,29 @@
-import { preset, preflight, defaultProperties } from '@tenoxui/preset-tailwind'
 import { is, has } from 'cssrxp'
-
-const { property, ...config } = preset()
 
 export default {
   include: ['index.html', 'src/**/*.{js,jsx}'],
-  exclude: ['**/node_modules/**/*', '**/dist/**/*'],
+  exclude: ['**/node_modules/**/*', 'src/plugin/**/*', '**/dist/**/*'],
   css: {
-    apply: { ...defaultProperties, ...preflight },
-    ...config,
-    property: {
-      ...property,
-      'iam-frfr': ({ value, unit, key, secondValue }) => {
-        return !value || key || secondValue
-          ? null
-          : `margin: ${is.number.test(value + unit) ? Number(value) * 0.25 + 'rem' : value + unit}`
+    utilities: {
+      moxie: {
+        bg: 'background',
+        m: ({ value }) => {
+          let margin = value
+          if (is.number.test(value)) margin = value * 0.25 + 'rem'
+          return { margin }
+        },
+        p: ({ value }) => {
+          let padding = value
+          if (is.number.test(value)) padding = value * 0.25 + 'rem'
+          return { padding }
+        }
       }
+    },
+    variants: {
+      hover: '&:hover'
+    },
+    apply: {
+      body: 'bg-yellow m-0 p-0'
     }
   }
 }
