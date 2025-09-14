@@ -17,10 +17,11 @@ export default {
         '@rollup/pluginutils',
         'node:path',
         'fast-glob',
-        'nguraijs',
         'node:url',
         'node:fs',
-        'tenoxui'
+        '@nguraijs/core',
+        '@tenoxui/core',
+        '@tenoxui/plugin-moxie'
       ]
     }
   }

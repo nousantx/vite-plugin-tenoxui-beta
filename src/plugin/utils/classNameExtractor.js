@@ -1,8 +1,10 @@
 import { Ngurai } from '@nguraijs/core'
 import { TenoxUI } from '@tenoxui/core'
-import { Moxie, transform, createMatcher } from '../../../moxie.js'
-import { create as CreateTenoxUI } from './createTenoxUI.js'
-import { Renderer } from './staticRenderer.js'
+import { createMatcher } from '@tenoxui/plugin-moxie'
+import CreateTenoxUI from './createTenoxUI.js'
+
+const processCache = new Map()
+const CACHE_MAX_SIZE = 500
 
 export class Extractor {
   constructor({
@@ -11,9 +13,6 @@ export class Extractor {
     utilities = {},
     variants = {},
     plugins = [],
-    // renderer config
-    aliases = {},
-    apply = {},
     // moxie config
     priority = 0,
     prefixChars = [],
@@ -21,7 +20,7 @@ export class Extractor {
     valuePatterns = [],
     moxiePlugins = []
   } = {}) {
-    this.matcher
+    this.matcher = null
     this.config = rules
     this.cssConfig = {
       utilities,
@@ -34,44 +33,107 @@ export class Extractor {
       valuePatterns
     }
 
+    this.core = null
+    this.isInitialized = false
+
+    try {
+      this._initializeCore()
+      this.init()
+    } catch (error) {
+      console.error('❌ Error initializing Extractor:', error)
+      this._initializeFallback()
+    }
+  }
+
+  _initializeCore() {
     this.core = CreateTenoxUI({
       ...this.cssConfig,
       onMatcherCreated: (result) => {
         this.matcher = result
       }
     })
-    this.main = new Renderer({
-      main: this.core,
-      aliases,
-      apply
-    })
+  }
 
-    this.init()
+  _initializeFallback() {
+    this.core = CreateTenoxUI({})
+    console.warn('⚠️ Using fallback extractor configuration')
   }
 
   init() {
-    this.core.process('[--moxie-is-init]-true')
-  }
-
-  render(...cn) {
-    return this.main.render(...cn)
+    try {
+      if (this.core) {
+        this.core.process('[--moxie-is-init]-true')
+        this.isInitialized = true
+      }
+    } catch (error) {
+      console.warn('⚠️ Error during extractor initialization:', error.message)
+      this.isInitialized = false
+    }
   }
 
   setConfig(css = {}) {
-    this.config = css.rules
-    this.cssConfig = css
-    this.core = CreateTenoxUI({
-      ...css,
-      onMatcherCreated: (x) => {
-        this.matcher = x
+    try {
+      // Validate input
+      if (typeof css !== 'object') {
+        throw new Error('Config must be an object')
       }
-    })
-    this.init()
-    return this
+
+      this.config = Array.isArray(css.rules) ? css.rules : []
+      this.cssConfig = {
+        utilities: css.utilities || {},
+        variants: css.variants || {},
+        plugins: css.plugins || [],
+        priority: css.priority || 0,
+        prefixChars: css.prefixChars || [],
+        typeSafelist: css.typeSafelist || [],
+        moxiePlugins: css.moxiePlugins || [],
+        valuePatterns: css.valuePatterns || []
+      }
+
+      // Clear cache when config changes
+      processCache.clear()
+
+      this.core = CreateTenoxUI({
+        ...css,
+        onMatcherCreated: (x) => {
+          this.matcher = x
+        }
+      })
+
+      this.init()
+
+      return this
+    } catch (error) {
+      console.error('❌ Error setting extractor config:', error)
+      return this
+    }
   }
 
-  process(code) {
-    if (!code) return []
+  _createCacheKey(code) {
+    let hash = 0
+    for (let i = 0; i < code.length; i++) {
+      const char = code.charCodeAt(i)
+      hash = (hash << 5) - hash + char
+      hash = hash & hash
+    }
+    return hash.toString()
+  }
+
+  _manageCacheSize() {
+    if (processCache.size >= CACHE_MAX_SIZE) {
+      const keysToDelete = Array.from(processCache.keys()).slice(
+        0,
+        Math.floor(CACHE_MAX_SIZE * 0.2)
+      )
+      keysToDelete.forEach((key) => processCache.delete(key))
+    }
+  }
+
+  _createMatchers() {
+    if (!this.matcher?.matcher?.patterns) {
+      return { withValue: null, valueless: null }
+    }
+
     try {
       const withValue = createMatcher(this.matcher.matcher.patterns, {
         strict: false,
@@ -83,43 +145,144 @@ export class Extractor {
         strict: false
       })
 
+      return { withValue, valueless }
+    } catch (error) {
+      console.warn('⚠️ Error creating matchers:', error.message)
+      return { withValue: null, valueless: null }
+    }
+  }
+
+  _processWithNgurai(code, matchers) {
+    const { withValue, valueless } = matchers
+
+    const tokens = [withValue, valueless]
+      .map((reg) => new RegExp(`!?${reg.source}!?`))
+      .filter(Boolean)
+
+    if (Array.isArray(this.config) && this.config.length > 0) {
+      this.config.forEach((reg) => {
+        try {
+          if (reg && reg.source) {
+            const source = reg.source
+            tokens.push(new RegExp(`!?${source}!?`, reg.flags))
+          }
+        } catch (error) {
+          console.warn('⚠️ Invalid regex in config:', error.message)
+        }
+      })
+    }
+
+    if (tokens.length === 0) {
+      return []
+    }
+
+    try {
       const nx = new Ngurai({
         tokensOnly: true,
         noSpace: true,
         noUnknownTokens: true,
         tokens: {
-          className: [
-            withValue,
-            valueless,
-            // new RegExp(reg2),
-            ...this.config.map((reg) => {
-              const source = reg.source
-              return new RegExp(`!?${source}`, reg.flags)
-            })
-          ]
+          className: tokens
         }
       })
 
-      const classNames = Array.from(
+      const result = nx.process(code)
+      return Array.from(
         new Set(
-          nx
-            .process(code)
+          result
             .flatMap((line) => line.filter((token) => token.type === 'className'))
             .map((token) => token.value)
+            .filter(Boolean)
         )
       )
-
-      const validatedClassNames =
-        classNames.length > 0
-          ? (this.core.process(classNames) || [])
-              .map((item) => item.use === 'moxie' && item.rules && item.className)
-              .filter(Boolean)
-          : []
-
-      return validatedClassNames
     } catch (error) {
-      console.error('Error extracting class names:', error)
+      console.warn('⚠️ Error processing with Ngurai:', error.message)
       return []
     }
+  }
+
+  _validateClassNames(classNames) {
+    if (!Array.isArray(classNames) || classNames.length === 0) {
+      return []
+    }
+
+    if (!this.core) {
+      return []
+    }
+
+    try {
+      const processResult = this.core.process(classNames)
+      if (!Array.isArray(processResult)) {
+        return []
+      }
+
+      return processResult
+        .filter((item) => item && item.use === 'moxie' && item.rules && item.className)
+        .map((item) => item.className)
+        .filter(Boolean)
+    } catch (error) {
+      console.warn('⚠️ Error validating class names:', error.message)
+      return []
+    }
+  }
+
+  process(code) {
+    // Input validation
+    if (!code || typeof code !== 'string') {
+      return []
+    }
+
+    // Check cache first
+    const cacheKey = this._createCacheKey(code)
+    if (processCache.has(cacheKey)) {
+      return processCache.get(cacheKey)
+    }
+
+    // Manage cache size
+    this._manageCacheSize()
+
+    let result = []
+
+    try {
+      // Early return if not properly initialized
+      if (!this.isInitialized || !this.matcher) {
+        console.warn('⚠️ Extractor not properly initialized')
+        processCache.set(cacheKey, result)
+        return result
+      }
+
+      // Create matchers
+      const matchers = this._createMatchers()
+      if (!matchers.withValue && !matchers.valueless) {
+        processCache.set(cacheKey, result)
+        return result
+      }
+
+      // Process with Ngurai
+      const classNames = this._processWithNgurai(code, matchers)
+      if (classNames.length === 0) {
+        processCache.set(cacheKey, result)
+        return result
+      }
+
+      // Validate class names
+      result = this._validateClassNames(classNames)
+
+      // Cache the result
+      processCache.set(cacheKey, result)
+    } catch (error) {
+      console.error('❌ Error extracting class names:', error)
+      processCache.set(cacheKey, [])
+    }
+
+    return result
+  }
+
+  // Cleanup method for proper resource management
+  destroy() {
+    this.clearCache()
+    this.matcher = null
+    this.core = null
+    this.isInitialized = false
   }
 }

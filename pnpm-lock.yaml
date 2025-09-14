@@ -8,31 +8,25 @@ importers:
 
   .:
     dependencies:
+      '@nguraijs/core':
+        specifier: ~0.2.0
+        version: 0.2.0
       '@rollup/pluginutils':
         specifier: ^5.1.4
         version: 5.1.4(rollup@4.41.1)
+      '@tenoxui/core':
+        specifier: 3.0.0-alpha.5
+        version: 3.0.0-alpha.5(@tenoxui/moxie@0.7.1)
+      '@tenoxui/plugin-moxie':
+        specifier: 1.0.0-alpha.11
+        version: 1.0.0-alpha.11
       fast-glob:
         specifier: ^3.3.3
         version: 3.3.3
-      tenoxui:
-        specifier: ^1.0.0
-        version: 1.0.0(@tenoxui/core@3.0.0-alpha.4(@tenoxui/moxie@0.7.1))(@tenoxui/moxie@0.7.1)
     devDependencies:
       '@eslint/js':
         specifier: ^9.25.0
         version: 9.27.0
-      '@nguraijs/core':
-        specifier: ~0.2.0
-        version: 0.2.0
-      '@tenoxui/core':
-        specifier: 3.0.0-alpha.4
-        version: 3.0.0-alpha.4(@tenoxui/moxie@0.7.1)
-      '@tenoxui/plugin-moxie':
-        specifier: 1.0.0-alpha.9
-        version: 1.0.0-alpha.9
-      '@tenoxui/preset-tailwind':
-        specifier: 1.0.0-alpha.5
-        version: 1.0.0-alpha.5
       '@types/react':
         specifier: ^19.1.2
         version: 19.1.5
@@ -57,9 +51,6 @@ importers:
       globals:
         specifier: ^16.0.0
         version: 16.1.0
-      nguraijs:
-        specifier: ^0.6.1
-        version: 0.6.1
       react:
         specifier: ^19.1.0
         version: 19.1.0
@@ -520,19 +511,16 @@ packages:
     cpu: [x64]
     os: [win32]
 
-  '@tenoxui/core@3.0.0-alpha.4':
-    resolution: {integrity: sha512-lPtoY2uuogRi0xDbe/MIQ1AhcZY6bZQOuxJOTtoNHfEncuKhQh5Wr0M0T/0XuvrAxZDar2YR68bx15o0UovP+Q==}
+  '@tenoxui/core@3.0.0-alpha.5':
+    resolution: {integrity: sha512-LI107g8i5POOzlAbU+PhEgse6WuIFoaLdptbYE2DWBJeDEKUGSRX5nBJaYgReE1awNgXvPvx5RuDDoaTQ3xyYg==}
     peerDependencies:
       '@tenoxui/moxie': '>=0.7.0'
 
   '@tenoxui/moxie@0.7.1':
     resolution: {integrity: sha512-lP/1ZnX3W6x9CIFAelvbLdUyjZ+E5jdqr3CgstBf6O4s+oKHSzpuyCK1AtiBroz48D6/SYgzSr6rAgB9dF3MTA==}
 
-  '@tenoxui/plugin-moxie@1.0.0-alpha.9':
-    resolution: {integrity: sha512-Wxq/GBw7pbO001xLM5Uv98G3RyiLVwML8A2JkH/24oq8XprFJc/i7rZqNPEKU0TOJe9qz5Py75eQeK4StwLMnw==}
-
-  '@tenoxui/preset-tailwind@1.0.0-alpha.5':
-    resolution: {integrity: sha512-3Ra6SwA123e1GxPt695UcPI8TEY6sNIbH2cHFQ3qgaBwZMDjuvd6dQx3yiWA9Z7CvHuakvNEXJoP3B8v1uuMzA==}
+  '@tenoxui/plugin-moxie@1.0.0-alpha.11':
+    resolution: {integrity: sha512-ZH1SbO2+v8iTtTkgBPdJJ+KWK/PD7QNNDKEty9P9bzeUbLoYPkcFlYg2bVpo3vi8t1V/Bd7Wf6DR4y56QceFpQ==}
 
   '@tenoxui/types@0.1.2':
     resolution: {integrity: sha512-Vvmcj5qN9qqEnGjBx3S3fQD3yty2RdMG2qtssQywBdEbX9ast1nuHCe60ML4q3+40Dfz2LMRh4Ny7vzGta5xPA==}
@@ -1017,9 +1005,6 @@ packages:
   natural-compare@1.4.0:
     resolution: {integrity: sha512-OWND8ei3VtNC9h7V60qff3SVobHr996CTwgxubgyQYEpg290h9J0buyECNNJexkFm5sOajh5G116RYA1c8ZMSw==}
 
-  nguraijs@0.6.1:
-    resolution: {integrity: sha512-KlY61qhWN3pol3BJnKlrsM4edLvMrVZkapTFNn8/ZIT0/vDeXDg8N9Q1J5vU0dsbOJ8Mq8PHYhfAtT5PtuqBLA==}
-
   node-releases@2.0.19:
     resolution: {integrity: sha512-xxOWJsBKtzAq7DY0J+DTzuz58K8e7sJbdgwkbMWQe8UYB6ekmsQ45q0M/tJDsGaZmbC+l7n57UV8Hl5tHxO9uw==}
 
@@ -1169,12 +1154,6 @@ packages:
   supports-color@7.2.0:
     resolution: {integrity: sha512-qpCAvRl9stuOHveKsn7HncJRvv501qIacKzQlO/+Lwxc9+0q2wLyv4Dfvt80/DPn2pqOBsJdDiogXGR9+OvwRw==}
     engines: {node: '>=8'}
-
-  tenoxui@1.0.0:
-    resolution: {integrity: sha512-cwfsiDOlGBCt6ZA2mRdw54cnSoTQOM1aphTLv4W0mPnUZ1Ove8pOFhyIl/j15hq99gRzSBlu+HsyF2IL3VWq7A==}
-    peerDependencies:
-      '@tenoxui/core': '>=2.0.0'
-      '@tenoxui/moxie': '>=0.7.0'
 
   tinybench@2.9.0:
     resolution: {integrity: sha512-0+DUvqWMValLmha6lr4kD8iAMK1HzV0/aKnCtWb9v9641TnP/MFb7Pc2bxoxQjTXAErryXVgUOfv2YqNllqGeg==}
@@ -1695,7 +1674,7 @@ snapshots:
   '@rollup/rollup-win32-x64-msvc@4.41.1':
     optional: true
 
-  '@tenoxui/core@3.0.0-alpha.4(@tenoxui/moxie@0.7.1)':
+  '@tenoxui/core@3.0.0-alpha.5(@tenoxui/moxie@0.7.1)':
     dependencies:
       '@tenoxui/moxie': 0.7.1
       '@tenoxui/types': 0.1.2
@@ -1704,11 +1683,7 @@ snapshots:
     dependencies:
       '@tenoxui/types': 0.1.2
 
-  '@tenoxui/plugin-moxie@1.0.0-alpha.9': {}
-
-  '@tenoxui/preset-tailwind@1.0.0-alpha.5':
-    dependencies:
-      '@tenoxui/types': 0.1.2
+  '@tenoxui/plugin-moxie@1.0.0-alpha.11': {}
 
   '@tenoxui/types@0.1.2': {}
 
@@ -2189,8 +2164,6 @@ snapshots:
 
   natural-compare@1.4.0: {}
 
-  nguraijs@0.6.1: {}
-
   node-releases@2.0.19: {}
 
   ohash@2.0.11: {}
@@ -2331,12 +2304,6 @@ snapshots:
   supports-color@7.2.0:
     dependencies:
       has-flag: 4.0.0
-
-  tenoxui@1.0.0(@tenoxui/core@3.0.0-alpha.4(@tenoxui/moxie@0.7.1))(@tenoxui/moxie@0.7.1):
-    dependencies:
-      '@tenoxui/core': 3.0.0-alpha.4(@tenoxui/moxie@0.7.1)
-      '@tenoxui/moxie': 0.7.1
-      '@tenoxui/types': 0.1.2
 
   tinybench@2.9.0: {}
 

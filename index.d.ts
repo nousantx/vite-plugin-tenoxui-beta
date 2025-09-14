@@ -1,4 +1,4 @@
 declare module 'vite-plugin-tenoxui-beta' {
-  function Txoo(): any {}
-  export default Txoo
+ export  function VitePlugin(): any {}
+  export default VitePlugin
 }

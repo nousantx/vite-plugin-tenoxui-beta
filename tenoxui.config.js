@@ -16,7 +16,9 @@ export default {
           let padding = value
           if (is.number.test(value)) padding = value * 0.25 + 'rem'
           return { padding }
-        }
+        },
+        flex: 'display: flex',
+        center: { justifyContent: 'center', alignItems: 'center' }
       }
     },
     variants: {

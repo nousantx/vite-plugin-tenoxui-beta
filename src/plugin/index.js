@@ -6,7 +6,6 @@ import { createFilter } from '@rollup/pluginutils'
 import { Extractor } from './utils/classNameExtractor.js'
 import { Renderer } from './utils/staticRenderer.js'
 import { create as TenoxUI } from './utils/createTenoxUI.js'
-import { transform } from '../../moxie.js'
 
 const WS_EVENT_PREFIX = 'hmr:tenoxui'
 const VIRTUAL_MODULE_ID = 'virtual:tenoxui:dev'
@@ -14,8 +13,12 @@ const RESOLVED_VIRTUAL_MODULE_ID = '\0' + VIRTUAL_MODULE_ID
 const VIRTUAL_MODULE_ID_BUILD = 'virtual:tenoxui.css'
 const RESOLVED_VIRTUAL_MODULE_ID_BUILD = '\0' + VIRTUAL_MODULE_ID_BUILD
 
-export default function Txoo() {
-  let config
+const fileContentCache = new Map()
+const FILE_CACHE_MAX_SIZE = 1000
+const DEFAULT_FILE_EXT = '**/*.{html,js,jsx,ts,tsx,vue,svelte}'
+
+export function VitePlugin() {
+  let config = {}
   let includeFilter = () => true
   let tenoxui = null
   let extractor = new Extractor()
@@ -23,83 +26,204 @@ export default function Txoo() {
 
   let GLOBAL_MATCHER = null
   let GLOBAL_MATCHER_TX = null
+  let MODES = null
+  let css = ''
+  let servers = []
+
+  const allClassNames = new Set()
+  let isScanning = false
+  let scanPromise = null
+
+  // Debounce helper for file changes
+  const debounceMap = new Map()
+  function debounce(key, fn, delay = 100) {
+    if (debounceMap.has(key)) {
+      clearTimeout(debounceMap.get(key))
+    }
+    debounceMap.set(
+      key,
+      setTimeout(() => {
+        debounceMap.delete(key)
+        fn()
+      }, delay)
+    )
+  }
 
   async function loadConfig() {
     try {
       if (fs.existsSync(configPath)) {
         const configURL = pathToFileURL(configPath).href + `?t=${Date.now()}`
-        const data = await import(configURL)
-        config = data.default || data
-        tenoxui = new Renderer({
-          main: TenoxUI({
+        const configModule = await import(configURL)
+        config = configModule.default || configModule
+
+        // Validate config structure
+        if (typeof config !== 'object') {
+          throw new Error('Config must export an object')
+        }
+
+        try {
+          tenoxui = new Renderer({
+            main: TenoxUI({
+              ...config.css,
+              onMatcherCreated: (x) => {
+                GLOBAL_MATCHER_TX = x
+              }
+            }),
+            aliases: config.css?.aliases || {},
+            apply: config.css?.apply || {}
+          })
+        } catch (rendererError) {
+          console.error('❌ Error creating TenoxUI renderer:', rendererError)
+          throw rendererError
+        }
+
+        // Initialize extractor with validation
+        try {
+          extractor.setConfig({
             ...config.css,
             onMatcherCreated: (x) => {
-              GLOBAL_MATCHER_TX = x
-            }
-          }),
-          aliases: config.css?.aliases,
-          apply: config.css?.apply
-        })
-        extractor.setConfig({
-          ...config.css,
-          onMatcherCreated: (x) => {
-            GLOBAL_MATCHER = x
-          },
-          rules: config.rules || []
-        })
-        const { include, exclude } = config
+              GLOBAL_MATCHER = x
+            },
+            rules: Array.isArray(config.rules) ? config.rules : []
+          })
+        } catch (extractorError) {
+          console.error('❌ Error configuring extractor:', extractorError)
+          throw extractorError
+        }
+
+        const { include = [DEFAULT_FILE_EXT], exclude } = config
         includeFilter = createFilter(include, exclude)
       } else {
-        console.warn('⚠️ Config file not found, using empty config')
-        config = {}
-        includeFilter = () => true
+        console.warn('⚠️ Config file not found, using default configuration')
+        config = {
+          include: [DEFAULT_FILE_EXT],
+          exclude: ['node_modules/**'],
+          css: {}
+        }
+        includeFilter = createFilter(config.include, config.exclude)
+
+        // Initialize with empty config
+        tenoxui = new Renderer({ main: TenoxUI({}) })
+        extractor = new Extractor()
       }
     } catch (error) {
-      console.error('❌ Error loading framework config:', error)
-      config = {}
+      console.error('❌ Error loading TenoxUI config:', error.message)
+      // Fallback to minimal working config
+      config = { include: [DEFAULT_FILE_EXT], css: {} }
+      tenoxui = new Renderer({ main: TenoxUI({}) })
+      extractor = new Extractor()
+      includeFilter = createFilter(config.include)
     }
   }
 
-  let MODES
-  let css = ''
-  let servers = []
-
-  const allClassNames = new Set()
-
   function generateCSS() {
-    if (!tenoxui) return ''
+    if (!tenoxui || allClassNames.size === 0) return ''
 
-    const styles = tenoxui.render(Array.from(allClassNames) || [])
-    // const styles = transform(data).rules.join('\n')
-    /*if (GLOBAL_MATCHER && GLOBAL_MATCHER_TX) {
-      console.log(GLOBAL_MATCHER.matcher.matcher)
-      console.log(GLOBAL_MATCHER_TX.matcher.matcher)
-    }*/
-    return styles
+    try {
+      const classNamesArray = Array.from(allClassNames)
+      const styles = tenoxui.render(classNamesArray)
+      return styles || ''
+    } catch (error) {
+      console.error('❌ Error generating CSS:', error)
+      return ''
+    }
   }
 
   async function scanAllFiles() {
-    allClassNames.clear()
-    const files = await fg(config.include || [], {
-      ignore: config.exclude || []
-    })
+    if (isScanning) {
+      return scanPromise
+    }
 
-    for (const file of files) {
-      const content = fs.readFileSync(file, 'utf-8')
-      const classNames = extractor.process(content)
-      for (const name of classNames) {
-        allClassNames.add(name)
+    isScanning = true
+    scanPromise = (async () => {
+      try {
+        allClassNames.clear()
+        const patterns =
+          Array.isArray(config.include) && config.include.length > 0
+            ? config.include
+            : [DEFAULT_FILE_EXT]
+
+        const files = await fg(patterns, {
+          ignore: config.exclude || ['node_modules/**'],
+          absolute: true,
+          onlyFiles: true
+        })
+
+        const processPromises = files.map(async (file) => {
+          try {
+            const content = await fs.promises.readFile(file, 'utf-8')
+            const classNames = extractor.process(content)
+
+            if (Array.isArray(classNames)) {
+              classNames.forEach((name) => {
+                if (name && typeof name === 'string') {
+                  allClassNames.add(name)
+                }
+              })
+            }
+          } catch (fileError) {
+            console.warn(`⚠️ Error processing file ${file}:`, fileError.message)
+          }
+        })
+
+        await Promise.all(processPromises)
+      } catch (error) {
+        console.error('❌ Error scanning files:', error)
+      } finally {
+        isScanning = false
+        scanPromise = null
       }
+    })()
+
+    return scanPromise
+  }
+
+  function processFileContent(file, content) {
+    try {
+      const cachedContent = fileContentCache.get(file)
+      if (cachedContent === content) {
+        return false
+      }
+
+      if (fileContentCache.size >= FILE_CACHE_MAX_SIZE) {
+        const firstKey = fileContentCache.keys().next().value
+        fileContentCache.delete(firstKey)
+      }
+      fileContentCache.set(file, content)
+
+      const classNames = extractor.process(content)
+      let hasChanges = false
+
+      if (Array.isArray(classNames)) {
+        classNames.forEach((name) => {
+          if (name && typeof name === 'string' && !allClassNames.has(name)) {
+            allClassNames.add(name)
+            hasChanges = true
+          }
+        })
+      }
+
+      return hasChanges
+    } catch (error) {
+      console.warn(`⚠️ Error processing file content for ${file}:`, error.message)
+      return false
     }
   }
 
   function sendCSSUpdate(newCSS) {
+    if (!newCSS || newCSS === css) return
+
+    css = newCSS
     for (const server of servers) {
-      server.ws.send({
-        type: 'custom',
-        event: WS_EVENT_PREFIX,
-        data: newCSS
-      })
+      try {
+        server.ws.send({
+          type: 'custom',
+          event: WS_EVENT_PREFIX,
+          data: newCSS
+        })
+      } catch (error) {
+        console.warn('⚠️ Error sending CSS update to client:', error.message)
+      }
     }
   }
 
@@ -110,9 +234,21 @@ export default function Txoo() {
         MODES = _config.command
       },
       async buildStart() {
-        await loadConfig()
-        await scanAllFiles()
-        css = generateCSS()
+        try {
+          await loadConfig()
+          await scanAllFiles()
+          css = generateCSS()
+        } catch (error) {
+          console.error('❌ Error during build start:', error)
+          this.error(error)
+        }
+      },
+      async buildEnd() {
+        // Cleanup
+        fileContentCache.clear()
+        allClassNames.clear()
+        debounceMap.forEach((timer) => clearTimeout(timer))
+        debounceMap.clear()
       }
     },
     {
@@ -128,35 +264,55 @@ export default function Txoo() {
 const id = ${JSON.stringify(VIRTUAL_MODULE_ID)};
 let currentCSS = '';
 
-// Fetch current CSS from server
 async function getCurrentCSS() {
   try {
     const response = await fetch('/__tenoxui_css__');
+    if (!response.ok) {
+      throw new Error(\`HTTP \${response.status}: \${response.statusText}\`);
+    }
     return await response.text();
   } catch (e) {
-    console.warn('[tenoxui] Failed to fetch CSS:', e);
+    console.warn('[tenoxui] Failed to fetch CSS:', e.message);
     return '';
   }
 }
 
-// Initialize styles
 getCurrentCSS().then(css => {
-  currentCSS = css;
-  updateStyle(id, css);
+  if (css !== currentCSS) {
+    currentCSS = css;
+    updateStyle(id, css);
+  }
+}).catch(e => {
+  console.error('[tenoxui] Error initializing styles:', e);
 });
 
 if (import.meta.hot) {
   import.meta.hot.on('${WS_EVENT_PREFIX}', (newCSS) => {
-    currentCSS = newCSS;
-    updateStyle(id, newCSS);
+    if (newCSS !== currentCSS) {
+      currentCSS = newCSS;
+      updateStyle(id, newCSS);
+    }
   });
   
   import.meta.hot.accept(() => {
-    // Accept updates
+    // nothing todo :)
   });
   
   import.meta.hot.prune(() => {
-    removeStyle(id);
+    try {
+      removeStyle(id);
+    } catch (e) {
+      console.warn('[tenoxui] Error removing styles:', e);
+    }
+  });
+
+  // Handle disposal
+  import.meta.hot.dispose(() => {
+    try {
+      removeStyle(id);
+    } catch (e) {
+      console.warn('[tenoxui] Error during disposal:', e);
+    }
   });
 }
 
@@ -168,35 +324,82 @@ export default {};
       },
       async configureServer(server) {
         servers.push(server)
-        server.watcher.add(configPath)
+
+        // Watch config file
+        if (fs.existsSync(configPath)) {
+          server.watcher.add(configPath)
+        }
+
         server.middlewares.use('/__tenoxui_css__', async (req, res, next) => {
           if (req.method === 'GET') {
-            await loadConfig()
-            await scanAllFiles()
-            res.setHeader('Content-Type', 'text/plain')
-            res.setHeader('Cache-Control', 'no-cache')
-            res.end(generateCSS())
+            try {
+              await loadConfig()
+              await scanAllFiles()
+              const generatedCSS = generateCSS()
+
+              res.setHeader('Content-Type', 'text/css; charset=utf-8')
+              res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate')
+              res.setHeader('Pragma', 'no-cache')
+              res.setHeader('Expires', '0')
+              res.end(generatedCSS)
+            } catch (error) {
+              console.error('❌ Error generating CSS for middleware:', error)
+              res.statusCode = 500
+              res.end('/* Error generating CSS */')
+            }
           } else {
             next()
           }
         })
 
         server.watcher.on('change', (file) => {
-          if (file === configPath) {
-            console.warn('TenoxUI config file changed, reloading...')
-            server.ws.send({ type: 'full-reload' })
+          const normalizedFile = path.normalize(file)
+
+          if (normalizedFile === path.normalize(configPath)) {
+            console.log('📁 TenoxUI config changed, reloading...')
+            debounce(
+              'config-reload',
+              () => {
+                server.ws.send({ type: 'full-reload' })
+              },
+              300
+            )
+            return
           }
+
           if (includeFilter(file)) {
-            const content = fs.readFileSync(file, 'utf-8')
-            const classNames = extractor.process(content)
-            for (const name of classNames) {
-              allClassNames.add(name)
-            }
-            css = generateCSS()
-            console.log(allClassNames, extractor.core.utilities)
-            sendCSSUpdate(css)
+            debounce(
+              `file-${file}`,
+              async () => {
+                try {
+                  const content = await fs.promises.readFile(file, 'utf-8')
+                  const hasChanges = processFileContent(file, content)
+
+                  if (hasChanges) {
+                    const newCSS = generateCSS()
+                    sendCSSUpdate(newCSS)
+                  }
+                } catch (error) {
+                  console.warn(`⚠️ Error processing changed file ${file}:`, error.message)
+                }
+              },
+              50
+            )
           }
         })
+
+        // Handle server cleanup
+        const originalClose = server.close.bind(server)
+        server.close = async () => {
+          // Cleanup resources
+          fileContentCache.clear()
+          allClassNames.clear()
+          debounceMap.forEach((timer) => clearTimeout(timer))
+          debounceMap.clear()
+          servers.length = 0
+
+          return originalClose()
+        }
       }
     },
     {
@@ -209,9 +412,11 @@ export default {};
           if (MODES === 'build') {
             return css
           }
-          return '/* nothing to do :3 */'
+          return '/* TenoxUI - build mode not active */'
         }
       }
     }
   ]
 }
+
+export default VitePlugin
