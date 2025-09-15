@@ -3,29 +3,30 @@ import { is, has } from 'cssrxp'
 export default {
   include: ['index.html', 'src/**/*.{js,jsx}'],
   exclude: ['**/node_modules/**/*', 'src/plugin/**/*', '**/dist/**/*'],
-  css: {
-    utilities: {
-      moxie: {
-        bg: 'background',
-        m: ({ value }) => {
-          let margin = value
-          if (is.number.test(value)) margin = value * 0.25 + 'rem'
-          return { margin }
-        },
-        p: ({ value }) => {
-          let padding = value
-          if (is.number.test(value)) padding = value * 0.25 + 'rem'
-          return { padding }
-        },
-        flex: 'display: flex',
-        center: { justifyContent: 'center', alignItems: 'center' }
-      }
+  utilities: {
+    bg: 'background',
+    text: 'color',
+    flex: { display: 'flex' },
+    center: { alignItems: 'center', justifyContent: 'center' },
+    p: ({ value }) => {
+      if (!value) return null
+      let padding = value
+      if (is.number.test(value)) padding = Number(value) * 0.25 + 'rem'
+      return { padding }
     },
-    variants: {
-      hover: '&:hover'
-    },
-    apply: {
-      body: 'bg-yellow m-0 p-0'
+    radius: ({ value }) => {
+      if (!value) return null
+      let borderRadius = value
+      if (is.number.test(value)) borderRadius = Number(value) * 0.25 + 'rem'
+      return { borderRadius }
     }
+  },
+  valuePatterns: ['#[0-9a-fA-F]+'],
+  variants: {
+    hover: '&:hover'
+  },
+  apply: {
+    ':root': '[fontFamily]-inter',
+    body: 'bg-black [color]-white'
   }
 }

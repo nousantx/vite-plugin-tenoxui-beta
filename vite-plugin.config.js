@@ -14,13 +14,12 @@ export default {
         exports: 'named'
       },
       external: [
-        '@rollup/pluginutils',
+        'node:fs',
+        'node:url',
         'node:path',
         'fast-glob',
-        'node:url',
-        'node:fs',
         '@nguraijs/core',
-        '@tenoxui/core',
+        '@rollup/pluginutils',
         '@tenoxui/plugin-moxie'
       ]
     }

@@ -1,7 +1,5 @@
 import { Ngurai } from '@nguraijs/core'
-import { TenoxUI } from '@tenoxui/core'
-import { createMatcher } from '@tenoxui/plugin-moxie'
-import CreateTenoxUI from './createTenoxUI.js'
+import { createMatcher, createTenoxUI } from '@tenoxui/plugin-moxie'
 
 const processCache = new Map()
 const CACHE_MAX_SIZE = 500
@@ -17,8 +15,7 @@ export class Extractor {
     priority = 0,
     prefixChars = [],
     typeSafelist = [],
-    valuePatterns = [],
-    moxiePlugins = []
+    valuePatterns = []
   } = {}) {
     this.matcher = null
     this.config = rules
@@ -29,7 +26,6 @@ export class Extractor {
       priority,
       prefixChars,
       typeSafelist,
-      moxiePlugins,
       valuePatterns
     }
 
@@ -46,7 +42,7 @@ export class Extractor {
   }
 
   _initializeCore() {
-    this.core = CreateTenoxUI({
+    this.core = createTenoxUI({
       ...this.cssConfig,
       onMatcherCreated: (result) => {
         this.matcher = result
@@ -55,7 +51,7 @@ export class Extractor {
   }
 
   _initializeFallback() {
-    this.core = CreateTenoxUI({})
+    this.core = createTenoxUI({})
     console.warn('⚠️ Using fallback extractor configuration')
   }
 
@@ -71,30 +67,29 @@ export class Extractor {
     }
   }
 
-  setConfig(css = {}) {
+  setConfig(config = {}) {
     try {
       // Validate input
-      if (typeof css !== 'object') {
+      if (typeof config !== 'object') {
         throw new Error('Config must be an object')
       }
 
-      this.config = Array.isArray(css.rules) ? css.rules : []
+      this.config = Array.isArray(config.rules) ? config.rules : []
       this.cssConfig = {
-        utilities: css.utilities || {},
-        variants: css.variants || {},
-        plugins: css.plugins || [],
-        priority: css.priority || 0,
-        prefixChars: css.prefixChars || [],
-        typeSafelist: css.typeSafelist || [],
-        moxiePlugins: css.moxiePlugins || [],
-        valuePatterns: css.valuePatterns || []
+        utilities: config.utilities || {},
+        variants: config.variants || {},
+        plugins: config.plugins || [],
+        priority: config.priority || 0,
+        prefixChars: config.prefixChars || [],
+        typeSafelist: config.typeSafelist || [],
+        valuePatterns: config.valuePatterns || []
       }
 
       // Clear cache when config changes
       processCache.clear()
 
-      this.core = CreateTenoxUI({
-        ...css,
+      this.core = createTenoxUI({
+        ...config,
         onMatcherCreated: (x) => {
           this.matcher = x
         }

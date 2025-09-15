@@ -4,18 +4,17 @@ import path from 'node:path'
 import { pathToFileURL } from 'node:url'
 import { createFilter } from '@rollup/pluginutils'
 import { Extractor } from './utils/classNameExtractor.js'
-import { Renderer } from './utils/staticRenderer.js'
-import { create as TenoxUI } from './utils/createTenoxUI.js'
+import { Renderer, createTenoxUI as TenoxUI } from '@tenoxui/plugin-moxie'
+import { has } from 'cssrxp'
 
 const WS_EVENT_PREFIX = 'hmr:tenoxui'
 const VIRTUAL_MODULE_ID = 'virtual:tenoxui:dev'
 const RESOLVED_VIRTUAL_MODULE_ID = '\0' + VIRTUAL_MODULE_ID
 const VIRTUAL_MODULE_ID_BUILD = 'virtual:tenoxui.css'
 const RESOLVED_VIRTUAL_MODULE_ID_BUILD = '\0' + VIRTUAL_MODULE_ID_BUILD
-
-const fileContentCache = new Map()
-const FILE_CACHE_MAX_SIZE = 1000
 const DEFAULT_FILE_EXT = '**/*.{html,js,jsx,ts,tsx,vue,svelte}'
+const FILE_CACHE_MAX_SIZE = 1000
+const fileContentCache = new Map()
 
 export function VitePlugin() {
   let config = {}
@@ -56,6 +55,16 @@ export function VitePlugin() {
         const configModule = await import(configURL)
         config = configModule.default || configModule
 
+        const frameworkConfig = {
+          utilities: config.utilities || {},
+          variants: config.variants || {},
+          plugins: config.plugins || [],
+          priority: config.priority || 0,
+          prefixChars: config.prefixChars || [],
+          typeSafelist: [...Object.keys(config.aliases || {}), ...(config.typeSafelist || [])],
+          valuePatterns: [has.dimension, ...(config.valuePatterns || [])]
+        }
+
         // Validate config structure
         if (typeof config !== 'object') {
           throw new Error('Config must export an object')
@@ -64,13 +73,10 @@ export function VitePlugin() {
         try {
           tenoxui = new Renderer({
             main: TenoxUI({
-              ...config.css,
-              onMatcherCreated: (x) => {
-                GLOBAL_MATCHER_TX = x
-              }
+              ...frameworkConfig
             }),
-            aliases: config.css?.aliases || {},
-            apply: config.css?.apply || {}
+            aliases: config?.aliases || {},
+            apply: config?.apply || {}
           })
         } catch (rendererError) {
           console.error('❌ Error creating TenoxUI renderer:', rendererError)
@@ -80,10 +86,7 @@ export function VitePlugin() {
         // Initialize extractor with validation
         try {
           extractor.setConfig({
-            ...config.css,
-            onMatcherCreated: (x) => {
-              GLOBAL_MATCHER = x
-            },
+            ...frameworkConfig,
             rules: Array.isArray(config.rules) ? config.rules : []
           })
         } catch (extractorError) {
@@ -419,4 +422,5 @@ export default {};
   ]
 }
 
+export { Extractor } from './utils/classNameExtractor.js'
 export default VitePlugin

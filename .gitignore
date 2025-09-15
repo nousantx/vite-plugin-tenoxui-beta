@@ -24,5 +24,4 @@ dist-ssr
 *.sw?
 
 plugin
-core.js
-moxie.js
+!src/plugin
