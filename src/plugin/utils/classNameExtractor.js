@@ -125,17 +125,17 @@ export class Extractor {
   }
 
   _createMatchers() {
-    if (!this.matcher?.matcher?.patterns) {
+    if (!this.matcher?.patterns) {
       return { withValue: null, valueless: null }
     }
 
     try {
-      const withValue = createMatcher(this.matcher.matcher.patterns, {
+      const withValue = createMatcher(this.matcher.patterns, {
         strict: false,
         valueMode: 2
       })
 
-      const valueless = createMatcher(this.matcher.matcher.patterns, {
+      const valueless = createMatcher(this.matcher.patterns, {
         withValue: false,
         strict: false
       })

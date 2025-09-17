@@ -121,7 +121,6 @@ export function VitePlugin() {
 
   function generateCSS() {
     if (!tenoxui || allClassNames.size === 0) return ''
-
     try {
       const classNamesArray = Array.from(allClassNames)
       const styles = tenoxui.render(classNamesArray)

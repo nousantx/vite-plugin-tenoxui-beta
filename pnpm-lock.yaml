@@ -14,12 +14,6 @@ importers:
       '@rollup/pluginutils':
         specifier: ^5.1.4
         version: 5.1.4(rollup@4.41.1)
-      '@tenoxui/core':
-        specifier: 3.0.0-alpha.5
-        version: 3.0.0-alpha.5(@tenoxui/moxie@0.7.1)
-      '@tenoxui/plugin-moxie':
-        specifier: 1.0.0-alpha.12
-        version: 1.0.0-alpha.12
       cssrxp:
         specifier: ^0.4.0
         version: 0.4.0
@@ -30,6 +24,12 @@ importers:
       '@eslint/js':
         specifier: ^9.25.0
         version: 9.27.0
+      '@tenoxui/core':
+        specifier: 3.0.0-alpha.5
+        version: 3.0.0-alpha.5(@tenoxui/moxie@0.7.1)
+      '@tenoxui/plugin-moxie':
+        specifier: 1.0.0-alpha.14
+        version: 1.0.0-alpha.14(@tenoxui/core@3.0.0-alpha.5(@tenoxui/moxie@0.7.1))
       '@types/react':
         specifier: ^19.1.2
         version: 19.1.5
@@ -519,8 +519,10 @@ packages:
   '@tenoxui/moxie@0.7.1':
     resolution: {integrity: sha512-lP/1ZnX3W6x9CIFAelvbLdUyjZ+E5jdqr3CgstBf6O4s+oKHSzpuyCK1AtiBroz48D6/SYgzSr6rAgB9dF3MTA==}
 
-  '@tenoxui/plugin-moxie@1.0.0-alpha.12':
-    resolution: {integrity: sha512-7aC0S8Hu1xceDk5V1OT/NCyIU5Yk+SOb2h/Y4+CDPX5oVodNCmWrlmI2qB7dwHPLOg6xzOFlOKYBzIbz/vS2vA==}
+  '@tenoxui/plugin-moxie@1.0.0-alpha.14':
+    resolution: {integrity: sha512-PEDIF0ZJvOsM1zrIfseOsTI2JZhTQLFOQ6JCBkkGcDZ6uQ6TCmZR/uTc7hwujgvNJoQ3YRxHSGf+VVR943NDvA==}
+    peerDependencies:
+      '@tenoxui/core': 3.0.0-alpha.5
 
   '@tenoxui/types@0.1.2':
     resolution: {integrity: sha512-Vvmcj5qN9qqEnGjBx3S3fQD3yty2RdMG2qtssQywBdEbX9ast1nuHCe60ML4q3+40Dfz2LMRh4Ny7vzGta5xPA==}
@@ -1683,7 +1685,9 @@ snapshots:
     dependencies:
       '@tenoxui/types': 0.1.2
 
-  '@tenoxui/plugin-moxie@1.0.0-alpha.12': {}
+  '@tenoxui/plugin-moxie@1.0.0-alpha.14(@tenoxui/core@3.0.0-alpha.5(@tenoxui/moxie@0.7.1))':
+    dependencies:
+      '@tenoxui/core': 3.0.0-alpha.5(@tenoxui/moxie@0.7.1)
 
   '@tenoxui/types@0.1.2': {}
 

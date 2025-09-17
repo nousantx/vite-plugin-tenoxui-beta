@@ -1,7 +1,7 @@
 {
   "name": "vite-plugin-tenoxui-beta",
   "description": "TenoxUI integration for vite",
-  "version": "0.1.0-alpha.6",
+  "version": "0.1.0-alpha.7",
   "type": "module",
   "scripts": {
     "dev": "vite",
@@ -27,16 +27,28 @@
       "import": "./plugin/index.es.js"
     }
   },
+  "peerDependencies": {
+    "@tenoxui/core": ">=3.0.0-alpha.5",
+    "@tenoxui/plugin-moxie": ">=1.0.0-alpha.14"
+  },
+  "peerDependenciesMeta": {
+    "@tenoxui/core": {
+      "optional": false
+    },
+    "@tenoxui/plugin-moxie": {
+      "optional": false
+    }
+  },
   "dependencies": {
     "@nguraijs/core": "~0.2.0",
     "@rollup/pluginutils": "^5.1.4",
-    "@tenoxui/core": "3.0.0-alpha.5",
-    "@tenoxui/plugin-moxie": "1.0.0-alpha.12",
     "cssrxp": "^0.4.0",
     "fast-glob": "^3.3.3"
   },
   "devDependencies": {
     "@eslint/js": "^9.25.0",
+    "@tenoxui/core": "3.0.0-alpha.5",
+    "@tenoxui/plugin-moxie": "1.0.0-alpha.14",
     "@types/react": "^19.1.2",
     "@types/react-dom": "^19.1.2",
     "@vitejs/plugin-react": "^4.4.1",
